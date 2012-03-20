@@ -1,5 +1,6 @@
 import socket
 import time
+import traceback
 
 from meep_example_app import MeepExampleApp, initialize
 
@@ -8,7 +9,7 @@ headers_to_environ = {
     'connection' : 'HTTP_CONNECTION',
     'user-agent' : 'HTTP_USER_AGENT',
     'accept' : 'HTTP_ACCEPT',
-    'referer': 'HTTP_REFERER',
+    'referrer': 'HTTP_REFERRER',
     'accept-encoding': 'HTTP_ACCEPT_ENCODING',
     'accept-language': 'HTTP_ACCEPT_LANGUAGE',
     'accept-charset': 'HTTP_ACCEPT_CHARSET',
@@ -58,10 +59,11 @@ def process_request(request):
     return environ
 
 
-
 def main():
     HOST = ''
     PORT = 8000
+
+    endString = '\r\n\r\n'
 
     initialize()
     app = MeepExampleApp()
@@ -71,19 +73,28 @@ def main():
     app_socket.bind((HOST, PORT))
     app_socket.listen(1)
 
+    data = ''
+    conn, addr = app_socket.accept()
+    print 'Connected by', addr
+
     while 1:
-        conn, addr = app_socket.accept()
-        print 'Connected by', addr
 
-        data = conn.recv(4096)
-        if data:
-            print (data,)
-            environ = process_request(data.lower().split('\r\n'))
-            responder = serve2_util(conn, addr)
-            responder.respond(app(environ, responder.start_response))
+        incomingData = conn.recv(1)
+        data += incomingData
+        if endString in data:
+            break
 
-    conn.close()
-
+    try:
+        print(data,)
+        environ = process_request(data.lower().split('\r\n'))
+        responder = serve2_util(conn, addr)
+        responder.respond(app(environ, responder.start_response))
+    except socket.error:
+        print 'socket error'
+        tb = traceback.format_exc()
+        print tb
+    finally:
+        conn.close()
 
 if __name__ == "__main__":
     main()
