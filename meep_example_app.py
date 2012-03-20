@@ -3,7 +3,7 @@ import traceback
 import cgi
 import meepcookie
 import os
-from Cookie import SimpleCookie, Morsel
+from Cookie import SimpleCookie
 from jinja2 import Environment, FileSystemLoader
 
 def initialize():
@@ -42,6 +42,7 @@ class MeepExampleApp(object):
             username = cookie["username"].value
             print "Login: Username = %s" % username
         except:
+            #TODO change this from a broad exception
             print "session cookie not set! defaulting username"
             username = ''
         
@@ -315,6 +316,7 @@ class MeepExampleApp(object):
             return fn(environ, start_response)
         except:
             tb = traceback.format_exc()
+            print tb
             x = "<h1>Error!</h1><pre>%s</pre>" % (tb,)
             
             status = '500 Internal Server Error'

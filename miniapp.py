@@ -13,6 +13,12 @@ headers_to_environ = {
     'accept-charset': 'HTTP_ACCEPT_CHARSET',
     'cookie': 'HTTP_COOKIE'
 }
+
+class ResponseFunctionHolder(object):
+    def __call__(self, status, headers):
+        self.status = status
+        self.headers = headers
+
 def process_request(request):
     environ = {}
     for line in request:
@@ -31,22 +37,21 @@ def process_request(request):
             except KeyError:
                 pass
 
-    return environ
-
-def start_response(status, headers):
-    response=[]
-
-    response.append('HTTP/1.0 ' + status)
-    response.extend([x+': '+y for x,y in headers])
+    initialize()
+    app = MeepExampleApp()
+    response_fn_callable = ResponseFunctionHolder()
+    appResponse = app(environ, response_fn_callable)
+    response = []
+    response.append('HTTP/1.0 ' + response_fn_callable.status)
+    response.extend([x+': '+y for x,y in response_fn_callable.headers])
     response.append('Date: ' + time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
     response.append('Server: WSGIServer/0.1 Python/2.7')
     response.append('\r\n')
-    #response.extend(body)
-    print ('\r\n'.join(response))
+    response.extend(a for a in appResponse)
+
+    return '\r\n'.join(response)
 
 def main():
-    initialize()
-    app = MeepExampleApp()
 
     if len(sys.argv) >= 2:
         file_name = sys.argv[1]
@@ -60,9 +65,8 @@ def main():
         fileText+=line
     f.close()
 
-    environ = process_request(fileText.lower().split('\r\n'))
-
-    data = app(environ, start_response)
+    response = process_request(fileText.lower().split('\r\n'))
+    print response
 
 if __name__ == "__main__":
     main()
