@@ -12,7 +12,7 @@ def handle_connection(connection):
             break
 
     try:
-        print(data,)
+        #print(data,)
         response = process_request(data.lower().split('\r\n'))
         connection.sendall(response)
     except socket.error:
