@@ -1,7 +1,8 @@
 import os
 
 filedir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
-testdir = os.path.dirname(__file__)+"\\twill\\"
+#testdir = os.path.dirname(__file__)+"\\twill\\"
+testdir = os.path.join(filedir, "test", "twill")
 
 def run_server(PORT=None):
     import time, tempfile, sys, subprocess
@@ -42,13 +43,13 @@ def test():
     global _server_url
     global testdir
     run_server(8000)
-    twill.execute_file(testdir+"test_create_account.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_logout.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_login.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_add_topic.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_add_message.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_delete_message.twill", initial_url=_server_url)
-    twill.execute_file(testdir+"test_delete_topic.twill", initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_create_account.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_logout.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_login.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_add_topic.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_add_message.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_delete_message.twill"), initial_url=_server_url)
+    twill.execute_file(os.path.join(testdir,"test_delete_topic.twill"), initial_url=_server_url)
     ###
     #   TODO: kill server somehow
     ###

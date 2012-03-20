@@ -1,3 +1,4 @@
+"""
 import unittest
 import sys
 import os.path
@@ -49,3 +50,4 @@ class TestMeepLib(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+"""
