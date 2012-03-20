@@ -1,20 +1,8 @@
 import socket
 import time
 import traceback
-
+from miniapp import process_request
 from meep_example_app import MeepExampleApp, initialize
-
-headers_to_environ = {
-    'host' : 'HTTP_HOST',
-    'connection' : 'HTTP_CONNECTION',
-    'user-agent' : 'HTTP_USER_AGENT',
-    'accept' : 'HTTP_ACCEPT',
-    'referrer': 'HTTP_REFERRER',
-    'accept-encoding': 'HTTP_ACCEPT_ENCODING',
-    'accept-language': 'HTTP_ACCEPT_LANGUAGE',
-    'accept-charset': 'HTTP_ACCEPT_CHARSET',
-    'cookie': 'HTTP_COOKIE'
-}
 
 class serve2_util():
     def __init__(self, con, addr):
@@ -37,28 +25,6 @@ class serve2_util():
 
         self.con.send('\r\n'.join(response))
 
-
-def process_request(request):
-    environ = {}
-    for line in request:
-        line = line.strip()
-        print (line,)
-        if line == '':
-            continue
-        if line.startswith('get') or line.startswith('post'):
-            line = line.split()
-            environ['REQUEST_METHOD'] = line[0]
-            environ['PATH_INFO'] = line[1]
-        else:
-            line = line.split(':', 1)
-            try:
-                environ[headers_to_environ[line[0]]] = line[1].strip()
-            except KeyError:
-                pass
-
-    return environ
-
-
 def main():
     HOST = ''
     PORT = 8000
@@ -78,7 +44,6 @@ def main():
     print 'Connected by', addr
 
     while 1:
-
         incomingData = conn.recv(1)
         data += incomingData
         if endString in data:

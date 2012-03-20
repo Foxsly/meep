@@ -1,64 +1,68 @@
+import sys
+import time
 from meep_example_app import MeepExampleApp, initialize
-import datetime
-from collections import deque
 
+headers_to_environ = {
+    'host' : 'HTTP_HOST',
+    'connection' : 'HTTP_CONNECTION',
+    'user-agent' : 'HTTP_USER_AGENT',
+    'accept' : 'HTTP_ACCEPT',
+    'referrer': 'HTTP_REFERRER',
+    'accept-encoding': 'HTTP_ACCEPT_ENCODING',
+    'accept-language': 'HTTP_ACCEPT_LANGUAGE',
+    'accept-charset': 'HTTP_ACCEPT_CHARSET',
+    'cookie': 'HTTP_COOKIE'
+}
+def process_request(request):
+    environ = {}
+    for line in request:
+        line = line.strip()
+        #print (line,)
+        if line == '':
+            continue
+        if line.startswith('get') or line.startswith('post'):
+            line = line.split()
+            environ['REQUEST_METHOD'] = line[0]
+            environ['PATH_INFO'] = line[1]
+        else:
+            line = line.split(':', 1)
+            try:
+                environ[headers_to_environ[line[0]]] = line[1].strip()
+            except KeyError:
+                pass
+
+    return environ
+
+def start_response(status, headers):
+    response=[]
+
+    response.append('HTTP/1.0 ' + status)
+    response.extend([x+': '+y for x,y in headers])
+    response.append('Date: ' + time.strftime("%a, %d %b %Y %H:%M:%S GMT", time.gmtime()))
+    response.append('Server: WSGIServer/0.1 Python/2.7')
+    response.append('\r\n')
+    #response.extend(body)
+    print ('\r\n'.join(response))
 
 def main():
     initialize()
     app = MeepExampleApp()
-    environ = {}
 
-    # CTB: interesting choice to hardcode this stuff -- works, I guess!
-    # bigger complaint is that this code isn't reusable for serve2!
-    def custom_start_response(status, headers):
-        print "HTTP/1.0", status
-        print "Date:", datetime.datetime.now().strftime("%Y-%m-%d %H:%M")
-        print "Server: CustomServer/0.1 Python/2.7"
-        for header in headers:
-            print header[0] + ":", header[1]
-    
-    file_name = raw_input("Please enter the request file's name: ")
-    print
+    if len(sys.argv) >= 2:
+        file_name = sys.argv[1]
+    else:
+        file_name = raw_input("Please enter the request file's name: ")
+        print
     f = open(file_name)
 
-    response = ''
-    queue = deque()
-    for line in f:
-        queue.append(line)
+    fileText = ''
+    for line in f.readlines():
+        fileText+=line
     f.close()
 
-    new_line = queue.popleft()
+    environ = process_request(fileText.lower().split('\r\n'))
 
-    #Handle the first line
-    line_array = new_line.split(" ")
-    request_method = line_array[0]
-    path_info_raw = line_array[1]
-    server_protocol = line_array[2].strip("\n")
-    
-    #Get the query from the url_path
-    path_list = path_info_raw.split("?")
-    path_info = path_list[0]
-    try:
-        query_string = path_list[1]
-        environ['QUERY_STRING'] = query_string
-    except IndexError:
-        #No query, do nothing
-        print
-    
-    environ['REQUEST_METHOD'] = request_method
-    environ['PATH_INFO'] = path_info
-    environ['SERVER_PROTOCOL'] = server_protocol
-    
-    while(True):
-        try:
-            new_line = queue.popleft().split(":")
-            if new_line[0] == 'cookie':
-                environ['HTTP_COOKIE'] = new_line[1]
-        except IndexError:
-            break
-    
+    data = app(environ, start_response)
 
-    data = app(environ, custom_start_response)
-    print data
-    
-main()
+if __name__ == "__main__":
+    main()
