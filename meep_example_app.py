@@ -63,11 +63,10 @@ class MeepExampleApp(object):
     ###
     def main_page(self, environ, start_response):
         headers = [('Content-type', 'text/html')]
-        try:
-            meeplib.get_curr_user()
-        except NameError:
+
+        if(meeplib.get_curr_user() is None):
             headers.append(('Location', '/'))
-            start_response('401 Unauthorized', headers)
+            start_response("401 Unauthorized", headers)
             return ["""<a href='/'>Click to login</a>"""]
 
         start_response("200 OK", headers)
@@ -115,12 +114,14 @@ class MeepExampleApp(object):
         # set content-type
         headers = [('Content-type', 'text/html')]
 
+        k = 'Location'
+        v = '/'
+
         # Test whether variable is defined to be None
-        if username is not None:
-             if password is not None:
+        # No idea why these tests don't work... the None value from the form is viewed as a string
+        if username != "None":
+             if password != "None":
                  if meeplib.check_user(username, password) is False:
-                     k = 'Location'
-                     v = '/'
                      returnStatement = """Invalid login"""
            
                  else:
@@ -128,9 +129,10 @@ class MeepExampleApp(object):
                      k = 'Location'
                      v = '/main_page'
                      # Create and set the cookie
-                     cookie_name, cookie_val = \
-                                meepcookie.make_set_cookie_header('username', username)
+                     cookie_name, cookie_val = meepcookie.make_set_cookie_header('username', username)
                      headers.append((cookie_name, cookie_val))
+                     print cookie_name, cookie_val
+                     returnStatement = """Login successful"""
              else:      
                  returnStatement = """password none"""
         else:
@@ -139,7 +141,7 @@ class MeepExampleApp(object):
         headers.append((k, v))
         start_response('302 Found', headers)
         
-        return """Invalid Password. Please try again."""     
+        return returnStatement
 
     ###
     #   LOGOUT
@@ -147,13 +149,11 @@ class MeepExampleApp(object):
     def logout(self, environ, start_response):
         headers = [('Content-type', 'text/html')]
         #Clear the cookie
+        #TODO: remove try block here, need to test that it still works properly
         try:
-            cookie_str = environ.get('HTTP_COOKIE', '')
-            cookie = SimpleCookie(cookie_str)
-            #I was trying to be fancy here, but couldn't get it to work
-            #cookie['username']['expires'] = meepcookie.cookie_expiration_date(-1)
-            cookie_name, cookie_val = \
-                                meepcookie.make_set_cookie_header('username', '')
+            #cookie_str = environ.get('HTTP_COOKIE', '')
+            #cookie = SimpleCookie(cookie_str)
+            cookie_name, cookie_val = meepcookie.make_set_cookie_header('username', '')
             headers.append((cookie_name, cookie_val))
         except:
             print "No cookie exists (this probably shouldn't happen)"

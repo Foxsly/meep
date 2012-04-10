@@ -244,10 +244,16 @@ def get_curr_user():
     if(len(_curr_user) > 0):
         return _curr_user[0]
     else:
-        return null
+        return None
 
-def delete_curr_user(username):
-    _curr_user.remove(_curr_user.index(0))
+def delete_curr_user():
+    if(get_curr_user() != None):
+        _curr_user.pop(0)
+    """
+    if(len(_curr_user) > 0):
+        print get_curr_user()
+        _curr_user.remove(_curr_user.index(0))
+    """
 
 def get_user(username):
     return _users.get(username)

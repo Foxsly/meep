@@ -1,7 +1,7 @@
+"""
 import os
 
 filedir = os.path.abspath(os.path.join(os.path.dirname(__file__),".."))
-#testdir = os.path.dirname(__file__)+"\\twill\\"
 testdir = os.path.join(filedir, "test", "twill")
 
 def run_server(PORT=None):
@@ -24,7 +24,8 @@ def run_server(PORT=None):
     time.sleep(2)
 
     _server_url = 'http://localhost:%d/' % (PORT,)
-    
+
+#TODO Make kill_server work
 #I know I need to add this, but right now it won't do anything.
 """
 def kill_server():
@@ -54,4 +55,5 @@ def test():
     #   TODO: kill server somehow
     ###
 
-    
+
+"""

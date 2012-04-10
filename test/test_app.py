@@ -1,7 +1,8 @@
-"""
 import unittest
 import sys
 import os.path
+import urllib
+
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), os.path.pardir)))
 import meep_example_app
 
@@ -10,6 +11,7 @@ class TestApp(unittest.TestCase):
         meep_example_app.initialize()
         app = meep_example_app.MeepExampleApp()
         self.app = app
+        meep_example_app.meeplib.delete_curr_user()
 
     def test_index(self):
         environ = {}                    # make a fake dict
@@ -30,6 +32,8 @@ class TestApp(unittest.TestCase):
         
         #No user logged in, so we return 401 Unauthorized
         def fake_start_response(status, headers):
+            print status
+            print headers
             assert status == '401 Unauthorized'
             assert ('Content-type', 'text/html') in headers
 
@@ -49,9 +53,9 @@ class TestApp(unittest.TestCase):
         assert 'Add a topic' in data[0]
         assert 'Show topics' in data[0]
         assert 'Log out' in data[0]
-                
+
     def test_create_user(self):
-        print "TestCreateUser"
+        #print "TestCreateUser"
         environ = {}                    # make a fake dict
         environ['PATH_INFO'] = '/create_user'
         environ['wsgi.input'] = ''
@@ -66,13 +70,71 @@ class TestApp(unittest.TestCase):
         assert 'Password' in data[0]
 
     def test_create_user_action(self):
-        pass
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/create_user_action'
+        environ['wsgi.input'] = ''
+        form_dict = {}
+        form_dict['username'] = 'abc'
+        form_dict['password'] = 'abc'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+
+        data = self.app(environ, fake_start_response)
+        assert "user added" in data[0]
 
     def test_login(self):
-        pass
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/login'
+        environ['wsgi.input'] = ''
+        form_dict = {}
+
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+            assert ('Set-Cookie', 'username=abc; Path=/') in headers
+
+        form_dict['username'] = 'abc'
+        form_dict['password'] = 'abc'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+        assert "Login successful" in data
+
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+
+        form_dict['username'] = 'no'
+        form_dict['password'] = 'good'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+        assert "Invalid login" in data
+
+        form_dict['username'] = None
+        form_dict['password'] = 'good'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+        assert "username none" in data
+
+        form_dict['username'] = 'no'
+        form_dict['password'] = None
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+        assert "password none" in data
 
     def test_logout(self):
-        pass
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+            assert ('Set-Cookie', 'username=; Path=/') in headers
+
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/logout'
+
+        data = self.app(environ, fake_start_response)
+        assert "Logged out" in data
 
     def test_list_topics(self):
         environ = {}
@@ -103,23 +165,59 @@ class TestApp(unittest.TestCase):
         assert 'author: test' in data[0]
         assert 'index' in data[0]
 
-    def test_list_messages(self):
-        pass
-
     def test_add_topic(self):
-        pass
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/m/add_topic'
+
+        def fake_start_response(status, headers):
+            assert status == '200 OK'
+            assert ('Content-type', 'text/html') in headers
+
+        self.login_user()
+
+        data = self.app(environ, fake_start_response)
+        assert "meep: add topic!" in data[0]
+        assert "Add a new topic" in data[0]
 
     def test_add_topic_action(self):
-        pass
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/m/add_topic_action'
+        environ['wsgi.input'] = ''
+        form_dict = {}
 
-    def test_add_message(self):
-        pass
-    
-    def test_add_message_action(self):
-        pass
-    
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+
+        self.login_user()
+
+        form_dict['title'] = 'title1'
+        form_dict['msgtitle'] = 'message2 title2'
+        form_dict['message'] = 'message1'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+
+        assert "topic added" in data[0]
+
     def test_add_message_topic_action(self):
-        pass    
+        environ = {}                    # make a fake dict
+        environ['PATH_INFO'] = '/m/add_message_topic_action'
+        environ['wsgi.input'] = ''
+        form_dict = {}
+
+        def fake_start_response(status, headers):
+            assert status == '302 Found'
+            assert ('Content-type', 'text/html') in headers
+
+        self.login_user()
+
+        form_dict['topicid'] = '1'
+        form_dict['title'] = 'title1'
+        form_dict['message'] = 'message1'
+        environ['QUERY_STRING'] = urllib.urlencode(form_dict)
+        data = self.app(environ, fake_start_response)
+
+        assert "message added to topic" in data[0]
 
     def test_delete_message_action(self):
         pass
@@ -135,4 +233,3 @@ class TestApp(unittest.TestCase):
         
 if __name__ == '__main__':
     unittest.main()
-"""
