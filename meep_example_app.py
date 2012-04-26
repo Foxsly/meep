@@ -7,7 +7,7 @@ from Cookie import SimpleCookie
 from jinja2 import Environment, FileSystemLoader
 
 def initialize():
-    try:    
+    try:
         meeplib._load_data()
     except IOError:  # file does not exist/cannot be opened
         # initialize data from scratch
@@ -239,7 +239,7 @@ class MeepExampleApp(object):
         
         #Add the message to the topic
         new_message = meeplib.Message(title, message, user)
-        topic.add_message(new_message)
+        topic.add_message(new_message, 1)
         
         headers = [('Content-type', 'text/html')]
         headers.append(('Location', '/m/topics/view?id=%d' % (topic.id)))

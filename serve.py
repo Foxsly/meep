@@ -7,7 +7,7 @@ app = MeepExampleApp()
 
 PORT = 8000
 if len(sys.argv) >= 2:
-    PORT = int(sys.argv[2])
+    PORT = int(sys.argv[1])
 
 httpd = make_server('', PORT, app)
 print "Serving HTTP on port %d..." % PORT

@@ -21,14 +21,14 @@
         </form>
         
         <hr>
-        
-        <form action='../add_message_topic_action' method='POST'>
-            Title: <input type='text' name='title'><br>
-            Message:<input type='text' name='message'><br>
-            <input type='number' hidden='true' name='topicid' value={{topic.id}}><input type='submit'>
-        </form>
-        
+
+
     {% endfor %}
+    <form action='../add_message_topic_action' method='POST'>
+        Title: <input type='text' name='title'><br>
+        Message:<input type='text' name='message'><br>
+        <input type='number' hidden='true' name='topicid' value={{topic.id}}><input type='submit'>
+    </form>
 
     <form action='../delete_topic_action' method='POST'>
         <input type='number' hidden='true' name='tid' value={{topic.id}}>
