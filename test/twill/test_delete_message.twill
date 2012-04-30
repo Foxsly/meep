@@ -10,7 +10,7 @@ find 'Testing add topic - topic title'
 follow 'Testing add topic - topic title'
 url /m/topics/view\?id=.+
 
-fv 3 twill 'deleteme'
+fv 1 twill 'deleteme'
 submit
 
 url /m/list_topics

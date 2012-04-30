@@ -1,5 +1,5 @@
-go http://localhost:8000/
-follow 'create_user'
+go http://localhost:8000/create_user
+#follow 'create_user'
 
 url /create_user
 

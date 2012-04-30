@@ -239,7 +239,7 @@ class MeepExampleApp(object):
         
         #Add the message to the topic
         new_message = meeplib.Message(title, message, user)
-        topic.add_message(new_message, 1)
+        topic.add_message(new_message)
         
         headers = [('Content-type', 'text/html')]
         headers.append(('Location', '/m/topics/view?id=%d' % (topic.id)))

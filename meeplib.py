@@ -1,4 +1,3 @@
-import pickle
 import MySQLdb
 import _mysql
 import sys
@@ -126,7 +125,6 @@ def _create_tables(conn):
 # Loads data from the tables
 ###
 def _load_data():
-    print ('in load data')
     def load_users(conn):
         cur=conn.cursor()
         cur.execute("SELECT * FROM user")
@@ -140,8 +138,8 @@ def _load_data():
         rows = cur.fetchall()
         for row in rows:
             #0=id, 1=title, 2=author
-            topicuser = _user_ids[row[0]]
-            Topic(row[1], row[2], topicuser)
+            topicuser = _user_ids[row[2]]
+            Topic(row[1], None, topicuser, row[0])
     def load_messages(conn):
         cur=conn.cursor()
         cur.execute("SELECT * FROM message")
@@ -162,7 +160,6 @@ def _load_data():
             sys.exit(1)
 
         _create_tables(conn)
-        print('tables created')
         load_users(conn)
         load_topics(conn)
         load_messages(conn)
@@ -188,9 +185,11 @@ def _save_data(tablename, *args):
             sys.exit(1)
 
         cur = conn.cursor()
-        query = "INSERT INTO " + tablename + "VALUES ("
-        for arg in args:
-            query += arg
+        newargs = []
+        for index, arg in enumerate(args):
+            newargs.append("'"+str(arg)+"'")
+        query = "INSERT INTO " + tablename + " VALUES (" + ",".join(map(str, newargs)) + ")"
+        print query
         cur.execute(query)
     finally:
         if conn:
@@ -205,7 +204,8 @@ def _delete_data(tablename, id):
             sys.exit(1)
 
         cur = conn.cursor()
-        query = "DELETE FROM " + tablename + "WHERE id=" + str(id)
+        query = "DELETE FROM " + tablename + " WHERE id=" + str(id)
+        print query
         cur.execute(query)
     finally:
         if conn:
@@ -222,7 +222,7 @@ class Message(object):
     
     """
     def __init__(self, title, post, author, id=None):
-        if id:
+        if id is not None:
             self.title = title
             self.post = post
             self.author = author
@@ -239,7 +239,7 @@ class Message(object):
         self.id = _get_next_message_id()
         # register this new message with the messages list:
         _messages[self.id] = self
-        
+        #_save_data('message', self.id, self.post, self.author.id, self.)
 
 def get_all_messages(sort_by='id'):
     return _messages.values()
@@ -261,7 +261,7 @@ class Topic(object):
     author must be an object of type 'User', and messages contains objects of type 'Message'
     """
     def __init__(self, title, message, author, id=None):
-        if id:
+        if id is not None:
             self.title = title
             self.author = author
             self.id = id
@@ -269,11 +269,13 @@ class Topic(object):
             _topics[self.id] = self
         else:
             self.title = title
-            assert isinstance(message, Message)
-            self.messages = {message.id : message}
+            #assert isinstance(message, Message)
+            #self.messages = {message.id : message}
             assert isinstance(author, User)
             self.author = author
             self._save_topic()
+            self.messages = {}
+            self.add_message(message)
 
     def _save_topic(self):
         self.id = _get_next_topic_id()
@@ -290,17 +292,19 @@ class Topic(object):
         
     def add_message(self, message, id=None):
         assert isinstance(message, Message)
-        if id:
+        if id is not None:
             self.messages[id] = message
+            message.topic_id = id
         else:
             id=self._get_next_msg_id()
             self.messages[id] = message
-            _save_data('message', message.id, message.post, message.author.id, self.id, message.title, id)
+            message.topic_id = id
+            _save_data('message', message.id, message.post, message.author.id, self.id, message.title, message.topic_id)
 
     def delete_message_from_topic(self, msg):
         assert isinstance(msg, Message)
         _delete_data('message', msg.id)
-        del self.messages[msg.id]
+        del self.messages[msg.topic_id]
 
 def get_all_topics():
     return _topics.values()
@@ -309,15 +313,15 @@ def get_topic(id):
     return _topics[id]
         
 def delete_topic(topic):
+    _delete_data('topic', topic.id)
     del _topics[topic.id]
-    _save_topic_data()
 
 ###
 
 class User(object):
     #This is for new users through the frontend
     def __init__(self, username, password, id=None):
-        if id:
+        if id is not None:
             self.username = username
             self.password = password
             self.id = id
